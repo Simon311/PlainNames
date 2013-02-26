@@ -58,7 +58,7 @@ namespace PlainNames
 				handler.Handled = true;
 				return;
 			}
-			if(Regex.IsMatch(player.Name,"[^a-z0-9,. !]+", RegexOptions.IgnoreCase))
+			if(Regex.IsMatch(player.Name,"[^a-z0-9,. !^&)(':]+", RegexOptions.IgnoreCase))
             {
                 TShock.Utils.ForceKick(player, "Unacceptable name", true, false);
 				handler.Handled = true;
