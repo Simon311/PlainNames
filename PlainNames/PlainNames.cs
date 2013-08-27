@@ -12,7 +12,7 @@ namespace PlainNames
     {
         public override Version Version
         {
-            get { return new Version("1.0.0.1"); }
+            get { return new Version("1.0.0.2"); }
         }
 
         public override string Name
@@ -58,7 +58,7 @@ namespace PlainNames
 				handler.Handled = true;
 				return;
 			}
-            if (Regex.IsMatch(player.Name, "[^a-z0-9,. !^&)(':<>-]+", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(player.Name, "[а-яА-ЯёЁ()]+"))
             {
                 TShock.Utils.ForceKick(player, "Sorry, but your name has illegal characters", true, false);
 				handler.Handled = true;
