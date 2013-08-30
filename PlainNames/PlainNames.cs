@@ -13,7 +13,7 @@ namespace PlainNames
     {
         public override Version Version
         {
-            get { return new Version("1.0.0.3"); }
+            get { return new Version("1.0.0.4"); }
         }
 
         public override string Name
@@ -149,6 +149,22 @@ namespace PlainNames
             }
             if (text.StartsWith("/"))
             {
+                if (Regex.IsMatch(text, "[а-яА-ЯёЁ]+"))
+                {
+                    foreach (KeyValuePair<string, string> pair in words)
+                    {
+                        text = text.Replace(pair.Key, pair.Value);
+                    }
+                    try
+                    {
+                        e.Handled = Commands.HandleCommand(tsplr, text);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.ConsoleError("Command exception");
+                        Log.Error(ex.ToString());
+                    }
+                }
                 return;
             }
             else if (!tsplr.mute && Regex.IsMatch(text, "[а-яА-ЯёЁ]+"))
