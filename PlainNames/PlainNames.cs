@@ -1,19 +1,19 @@
 ﻿using System;
 using TShockAPI;
 using Terraria;
-using Hooks;
+using TerrariaApi.Server;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 
 namespace PlainNames
 {
-    [APIVersion(1, 12)]
+    [ApiVersion(1, 14)]
     public class PlainNames : TerrariaPlugin
     {
         public override Version Version
         {
-            get { return new Version("1.0.0.4"); }
+            get { return new Version("1.0.0.5"); }
         }
 
         public override string Name
@@ -34,15 +34,16 @@ namespace PlainNames
         public PlainNames(Main game)
             : base(game)
         {
-            Order = -1;
+            Order = 7;
         }
 
         Dictionary<string, string> words = new Dictionary<string, string>();
 
         public override void Initialize()
         {
-            ServerHooks.Join += OJ;
-            ServerHooks.Chat += OC;
+            ServerApi.Hooks.ServerJoin.Register(this, OJ, 7);
+            ServerApi.Hooks.ServerChat.Register(this, OC, 7);
+
             words.Add("а", "a");
             words.Add("б", "b");
             words.Add("в", "v");
@@ -115,36 +116,45 @@ namespace PlainNames
         {
             if (disposing)
             {
-                ServerHooks.Join -= OJ;
-                ServerHooks.Chat -= OC;
+                ServerApi.Hooks.ServerJoin.Deregister(this, OJ);
+                ServerApi.Hooks.ServerChat.Deregister(this, OC);
             }
             base.Dispose(disposing);
         }
 		
-        private void OJ(int ply, HandledEventArgs handler)
+        private void OJ(JoinEventArgs args)
         {
-			var player = TShock.Players[ply];
+			var player = TShock.Players[args.Who];
 			if (player == null)
 			{
-				handler.Handled = true;
+				args.Handled = true;
 				return;
 			}
             if (Regex.IsMatch(player.Name, "[а-яА-ЯёЁ()]+"))
             {
-                TShock.Utils.ForceKick(player, "Sorry, but your name has illegal characters", true, false);
-				handler.Handled = true;
+                var nm = player.TPlayer.name;
+                foreach (KeyValuePair<string, string> pair in words)
+                {
+                    nm = nm.Replace(pair.Key, pair.Value);
+                }
+                player.TPlayer.name = nm;
+
+                // TShock.Utils.ForceKick(player, "Sorry, but your name has illegal characters", true, false);
+
+				args.Handled = true;
 				return;
             }
         }
-        private void OC(messageBuffer msg, int ply, string text, HandledEventArgs e)
+        private void OC(ServerChatEventArgs args)
         {
-            if (e.Handled)
+            if (args.Handled)
                 return;
 
-            var tsplr = TShock.Players[msg.whoAmI];
+            var tsplr = TShock.Players[args.Buffer.whoAmI];
+            var text = args.Text;
             if (tsplr == null)
             {
-                e.Handled = true;
+                args.Handled = true;
                 return;
             }
             if (text.StartsWith("/"))
@@ -157,7 +167,7 @@ namespace PlainNames
                     }
                     try
                     {
-                        e.Handled = Commands.HandleCommand(tsplr, text);
+                        args.Handled = Commands.HandleCommand(tsplr, text);
                     }
                     catch (Exception ex)
                     {
@@ -175,13 +185,13 @@ namespace PlainNames
                 }
                 if (TShock.Config.EnableChatAboveHeads)
                 {
-                    TShock.Utils.Broadcast(ply, String.Format(TShock.Config.ChatAboveHeadsFormat, tsplr.Group.Name, tsplr.Group.Prefix, tsplr.Name, tsplr.Group.Suffix, text), tsplr.Group.R, tsplr.Group.G, tsplr.Group.B);
+                    TShock.Utils.Broadcast(args.Who, String.Format(TShock.Config.ChatAboveHeadsFormat, tsplr.Group.Name, tsplr.Group.Prefix, tsplr.Name, tsplr.Group.Suffix, text), tsplr.Group.R, tsplr.Group.G, tsplr.Group.B);
                 }
                 else
                 {
                     TShock.Utils.Broadcast(String.Format(TShock.Config.ChatFormat, tsplr.Group.Name, tsplr.Group.Prefix, tsplr.Name, tsplr.Group.Suffix, text), tsplr.Group.R, tsplr.Group.G, tsplr.Group.B);
                 }
-                e.Handled = true;
+                args.Handled = true;
             }
         }
     }
